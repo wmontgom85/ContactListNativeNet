@@ -20,18 +20,22 @@ class ConnectionProvider(
     fun <T : Any> makeRequest(): APIResult<T> {
         var response = ""
 
+        var connection : HttpURLConnection? = null
+
         try {
             val url = URL(request.restURL)
 
-            with(url.openConnection() as HttpURLConnection) {
+            connection = url.openConnection() as HttpURLConnection
+
+            connection.apply {
                 connectTimeout = request.timeout
                 readTimeout = request.timeout
                 requestMethod = request.requestType
-                doInput = (request.requestType.equals("POST"))
-                doOutput = true
+                doInput = true
+                doOutput = request.requestType == "POST"
                 setRequestProperty("charset", "utf-8")
 
-                if (request.requestType.equals("POST")) {
+                if (request.requestType == "POST") {
                     request.buildQuery()?.let {
                         val os = outputStream
                         val writer = BufferedWriter(OutputStreamWriter(os, "UTF-8"))
@@ -41,24 +45,24 @@ class ConnectionProvider(
                         os.close()
                     }
                 }
-
-                connect()
-
-                if (responseCode == HttpsURLConnection.HTTP_OK) {
-                    val br = BufferedReader(InputStreamReader(inputStream))
+            }
+            return when {
+                connection.responseCode == HttpsURLConnection.HTTP_OK -> {
+                    val br = BufferedReader(InputStreamReader(connection.inputStream))
                     br.readLine().forEach {
                         response += it
                     }
-                    return APIResult.Success(response)
-                } else {
-                    return APIResult.Error(IOException(task.errorMessage?.let { "An error has occurred." }))
+                    APIResult.Success(response)
                 }
+                else -> APIResult.Error(IOException(task.errorMessage?.let { "An error has occurred. Error code CP001" }))
             }
         } catch (tx: Throwable) {
             Log.d("1.ConnectionProvider", tx.message)
 
             // set the connection to null so no further execution can occur
-            return APIResult.Error(IOException("${task.errorMessage?.let { "An error has occurred." }}. Error Code CP001"))
+            return APIResult.Error(IOException("${task.errorMessage?.let { "An error has occurred." }}. Error Code CP002"))
+        } finally {
+            connection?.let { it.disconnect() }
         }
     }
 }

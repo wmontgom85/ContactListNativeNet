@@ -13,7 +13,7 @@ class RESTRequest {
 
     val restURL : String by lazy { baseUrl + endPoint }
 
-    var timeout : Int = 30000
+    var timeout : Int = 5000
 
     fun buildQuery() : String? {
         try {

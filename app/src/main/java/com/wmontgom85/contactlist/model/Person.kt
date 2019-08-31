@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream
 
 @Entity
 data class Person(
-    @PrimaryKey(autoGenerate = true) var _id: Long,
+    @PrimaryKey(autoGenerate = true) var _id: Long = 0L,
     var gender: String?,
     @Ignore var name: Name?,
     @Ignore var location: Location?,

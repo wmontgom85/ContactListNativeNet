@@ -1,5 +1,6 @@
 package com.wmontgom85.contactlist.api
 
+import android.util.Log
 import com.wmontgom85.contactlist.sealed.APIResult
 import java.io.IOException
 
@@ -18,11 +19,13 @@ object APIHandler {
                         return APIResult.Success(it)
                     } ?: run {
                         // parsing error
-                        return APIResult.Error(IOException("An error has occurred while parsing. Error code AH001"))
+                        return APIResult.Error(Exception("An error has occurred while parsing. Error code AH001"))
                     }
                 } catch (tx : Throwable) {
+                    Log.d("1.APIHandler", tx.message)
+
                     // fatal error
-                    return APIResult.Error(IOException("An error has occurred while parsing. Error code AH002"))
+                    return APIResult.Error(Exception("An error has occurred while parsing. Error code AH002"))
                 }
 
             }

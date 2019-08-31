@@ -23,14 +23,13 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 import android.animation.ValueAnimator
 import android.app.ActivityOptions
+import android.app.Application
 import android.content.Intent
-import com.wmontgom85.contactlist.api.DBHelper
 import com.wmontgom85.contactlist.func.*
 import com.wmontgom85.contactlist.func.newHeight
 import com.wmontgom85.contactlist.func.newWidth
 import com.wmontgom85.contactlist.func.px
 import com.wmontgom85.contactlist.model.Person
-import com.wmontgom85.contactlist.sealed.APIResult
 import com.wmontgom85.contactlist.viewmodel.PersonsViewModel
 import kotlinx.android.synthetic.main.content_main.*
 
@@ -61,38 +60,27 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        refreshPersons()
-
         linearLayoutManager = LinearLayoutManager(this)
         persons_list.layoutManager = linearLayoutManager
 
         adapter = PersonsAdapter()
         persons_list.adapter = adapter
 
-        //create instance of view model factory
-        val viewModelFactory = PersonsViewModelFactory()
-
         //Use view ModelFactory to initialize view model
-        personsViewModel = ViewModelProviders.of(this@MainActivity, viewModelFactory).get(PersonsViewModel::class.java)
+        personsViewModel = ViewModelProviders.of(this).get(PersonsViewModel::class.java)
 
         //observe viewModel live data
         personsViewModel.personsLiveData.observe(this, Observer {
             it?.let {
-                when (it) {
-                    is APIResult.Success -> {
-                        refreshPersons(it.data as Person)
-                    }
-
-                    is APIResult.Error -> {
-                        showMessage("Whoops!", "An error has occurred. Please try again.")
-                    }
-                }
-            } ?: run {
-                // display error
-                showMessage("Whoops!", "An error has occurred. Please try again.")
+                persons = it
+                refreshPersons()
             }
         })
 
+        // observe viewModel errors
+        personsViewModel.errorHandler.observe(this, Observer {
+            showMessage("Whoops!", it)
+        })
 
         // throttle the fab so that the animation can complete before another click is available
         val menuAction: (View) -> Unit = throttleFirst(350L, MainScope(), this::hideShowActionMenu)
@@ -102,9 +90,25 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         val personActon: (View) -> Unit = throttleFirst(500L, MainScope(), this::createPerson)
         create_action.setOnClickListener(personActon)
         random_action.setOnClickListener(personActon)
+
+        // fetch the users
+        loadPersons()
+    }
+
+    private fun loadPersons() {
+        launch {
+            // coroutine on Main
+            val query = async(Dispatchers.IO) {
+                personsViewModel.getPersonsFromDB()
+            }
+
+            query.await()
+        }
     }
 
     private fun showMessage(title: String, msg: String) {
+        loading.visibility = View.GONE
+
         val builder = AlertDialog.Builder(this@MainActivity)
 
         builder.setTitle(title)
@@ -206,26 +210,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
      * Adds the new person to the DB (if exists) and refreshes the persons list
      * @param Person?
      */
-    fun refreshPersons(p : Person? = null) {
-        launch { // coroutine on Main
-            val query = async(Dispatchers.IO) {
-                // insert returned person into db
-                DBHelper.getInstance(this@MainActivity)?.personDao()?.let { pd ->
-                    p?.let {
-                        it.fill()
-                        pd.insert(it)
-                    }
-                    persons = pd.getPeople()
-                }
-            }
+    private fun refreshPersons() {
+        loading.visibility = View.GONE
 
-            query.await()
-
-            loading.visibility = View.GONE
-
-            // update recycler view
-            adapter.notifyDataSetChanged()
-        }
+        // update recycler view
+        adapter.notifyDataSetChanged()
     }
 
     public override fun onActivityResult(requestCode:Int, resultCode:Int, data: Intent?) {
@@ -233,13 +222,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
         if (requestCode == NEWPERSONRESULT) {
 
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    class PersonsViewModelFactory : ViewModelProvider.NewInstanceFactory(){
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-            return PersonsViewModel() as T
         }
     }
 
@@ -290,7 +272,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             personId = p._id
 
             p.avatarLarge?.let {
-                Picasso.get().load(it).into(avatar)
+                if (it.isNotEmpty())
+                    Picasso.get().load(it).into(avatar)
+                else
+                    avatar.setImageResource(R.mipmap.avatar)
             } ?: run {
                 avatar.setImageResource(R.mipmap.avatar)
             }
