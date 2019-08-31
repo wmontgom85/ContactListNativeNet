@@ -2,7 +2,7 @@ package com.wmontgom85.contactlist.api
 
 import android.net.Uri
 
-abstract class RESTRequest {
+class RESTRequest {
     val baseUrl : String by lazy { "https://randomuser.me/api/1.2/" }
 
     var requestType : String = "GET"

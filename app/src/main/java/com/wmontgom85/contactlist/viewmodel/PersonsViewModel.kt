@@ -1,17 +1,21 @@
 package com.wmontgom85.contactlist.viewmodel
 
 
-import android.app.Application
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types.newParameterizedType
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.wmontgom85.contactlist.api.APIHandler
+import com.wmontgom85.contactlist.api.APITask
+import com.wmontgom85.contactlist.api.RESTRequest
 import com.wmontgom85.contactlist.model.Person
+import com.wmontgom85.contactlist.sealed.APIResult
 import kotlinx.coroutines.*
-import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
-class PersonsViewModel : BaseViewModel() {
-    @Inject
-    lateinit var personsApi: PersonsApi
-
+class PersonsViewModel : ViewModel() {
     //create a new Job
     private val parentJob = Job()
 
@@ -22,20 +26,25 @@ class PersonsViewModel : BaseViewModel() {
     private val scope = CoroutineScope(coroutineContext)
 
     //live data that will be populated as persons update
-    val personsLiveData = MutableLiveData<Person>()
+    val personsLiveData = MutableLiveData<APIResult<Any>>()
 
+    @Suppress("UNCHECKED_CAST")
     fun getRandomPerson() {
         ///launch the coroutine scope
         scope.launch {
-            //get latest forms from forms repo
-            val person = safeApiCall(
-                //await the result of deferred type
-                call = { personsApi.getRandomPerson() },
-                errorMessage = "Error fetching person"
-                //convert to mutable list
-            )?.results?.get(0)
+            // create the task
+            // @TODO use DI for moshi and api task to avoid code duplication
 
-            personsLiveData.postValue(person)
+            val moshi =  Moshi.Builder()
+                .add(KotlinJsonAdapterFactory())
+                .build()
+
+            val adapter = moshi.adapter(Person::class.java)
+            val task = APITask(adapter as JsonAdapter<Any>, null, "An error has occurred.")
+            val request = RESTRequest()
+
+            // make the network call
+            personsLiveData.postValue(APIHandler.apiCall(task, request))
         }
     }
 
