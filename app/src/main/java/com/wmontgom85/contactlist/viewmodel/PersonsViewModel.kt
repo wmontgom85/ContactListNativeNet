@@ -13,6 +13,7 @@ import com.wmontgom85.contactlist.api.APIHandler
 import com.wmontgom85.contactlist.api.APITask
 import com.wmontgom85.contactlist.api.DBHelper
 import com.wmontgom85.contactlist.api.RESTRequest
+import com.wmontgom85.contactlist.apiresult.PersonsApiResult
 import com.wmontgom85.contactlist.dao.PersonDao
 import com.wmontgom85.contactlist.model.Person
 import com.wmontgom85.contactlist.sealed.APIResult
@@ -47,17 +48,20 @@ class PersonsViewModel(application: Application) : AndroidViewModel(application)
             val moshi =  Moshi.Builder().build()
             //val type = Types.newParameterizedType(List::class.java, Person::class.java)
             //val adapter = moshi.adapter<List<String>>(type)
-            val adapter = moshi.adapter(Person::class.java)
+            val adapter = moshi.adapter(PersonsApiResult::class.java)
             val task = APITask(adapter as JsonAdapter<Any>, null, "An error has occurred.")
             val request = RESTRequest()
 
             APIHandler.apiCall(task, request).run {
                 when (this) {
                     is APIResult.Success -> {
-                        val p = data as Person
-                        p.fill()
-                        personDao?.insert(p)
-                        getPersonsFromDB()
+                        val p = data as PersonsApiResult
+
+                        p.results[0].let { p ->
+                            p.fill()
+                            personDao?.insert(p)
+                            getPersonsFromDB()
+                        }
                     }
 
                     is APIResult.Error -> {
