@@ -14,6 +14,9 @@ public interface PersonDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(person: Person)
 
+    @Query("DELETE FROM Person WHERE _id = :pId")
+    fun delete(pId: Int)
+
     @Delete
     fun delete(person: Person)
 

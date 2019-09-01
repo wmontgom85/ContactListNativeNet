@@ -92,18 +92,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         random_action.setOnClickListener(personActon)
 
         // fetch the users
-        loadPersons()
-    }
-
-    private fun loadPersons() {
-        launch {
-            // coroutine on Main
-            val query = async(Dispatchers.IO) {
-                personsViewModel.getPersonsFromDB()
-            }
-
-            query.await()
-        }
+        personsViewModel.getPersonsFromDB()
     }
 
     private fun showMessage(title: String, msg: String) {
@@ -137,7 +126,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when(item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_settings -> {
+                personsViewModel.deleteAllPersons()
+                return true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
