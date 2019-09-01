@@ -2,7 +2,6 @@ package com.wmontgom85.contactlist.api
 
 import android.util.Log
 import com.wmontgom85.contactlist.sealed.APIResult
-import java.io.IOException
 
 /**
  * Module which provides all required dependencies about network

@@ -3,18 +3,16 @@ package com.wmontgom85.contactlist.viewmodel
 
 import android.app.Application
 import android.util.Log
-import androidx.annotation.NonNull
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
 import com.wmontgom85.contactlist.api.APIHandler
 import com.wmontgom85.contactlist.api.APITask
-import com.wmontgom85.contactlist.api.DBHelper
+import com.wmontgom85.contactlist.repo.DBHelper
 import com.wmontgom85.contactlist.api.RESTRequest
 import com.wmontgom85.contactlist.apiresult.PersonsApiResult
-import com.wmontgom85.contactlist.dao.PersonDao
+import com.wmontgom85.contactlist.repo.PersonDao
 import com.wmontgom85.contactlist.model.Person
 import com.wmontgom85.contactlist.sealed.APIResult
 import kotlinx.coroutines.*
@@ -44,11 +42,12 @@ class PersonsViewModel(application: Application) : AndroidViewModel(application)
         scope.launch {
             // create the task
             // @TODO use DI for moshi and api task to avoid code duplication
-
             val moshi =  Moshi.Builder().build()
+            val adapter = moshi.adapter(PersonsApiResult::class.java)
+
             //val type = Types.newParameterizedType(List::class.java, Person::class.java)
             //val adapter = moshi.adapter<List<String>>(type)
-            val adapter = moshi.adapter(PersonsApiResult::class.java)
+
             val task = APITask(adapter as JsonAdapter<Any>, null, "An error has occurred.")
             val request = RESTRequest()
 
@@ -71,7 +70,6 @@ class PersonsViewModel(application: Application) : AndroidViewModel(application)
                     }
                 }
             }
-
         }
     }
 

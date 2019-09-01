@@ -1,4 +1,4 @@
-package com.wmontgom85.contactlist.dao
+package com.wmontgom85.contactlist.repo
 
 import androidx.room.*
 import com.wmontgom85.contactlist.model.Person

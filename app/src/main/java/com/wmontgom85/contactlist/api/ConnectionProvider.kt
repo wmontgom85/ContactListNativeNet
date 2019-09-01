@@ -46,6 +46,7 @@ class ConnectionProvider(
                     }
                 }
             }
+
             return when {
                 connection.responseCode == HttpsURLConnection.HTTP_OK -> {
                     val br = BufferedReader(InputStreamReader(connection.inputStream))
@@ -66,9 +67,3 @@ class ConnectionProvider(
         }
     }
 }
-
-/**
- * if (response.isSuccessful) return Result.Success(response.body()!!)
-
-return Result.Error(IOException("Error Occurred during getting safe Api result, Custom ERROR - $errorMessage"))
- */

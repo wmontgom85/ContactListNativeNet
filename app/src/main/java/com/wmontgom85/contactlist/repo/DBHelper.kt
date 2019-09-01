@@ -1,10 +1,9 @@
-package com.wmontgom85.contactlist.api
+package com.wmontgom85.contactlist.repo
 
 import android.content.Context
 import androidx.room.RoomDatabase
 import androidx.room.Database
 import androidx.room.Room
-import com.wmontgom85.contactlist.dao.PersonDao
 import com.wmontgom85.contactlist.model.Person
 
 @Database(entities = [
