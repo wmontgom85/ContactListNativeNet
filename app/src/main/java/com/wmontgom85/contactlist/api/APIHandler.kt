@@ -14,7 +14,6 @@ object APIHandler {
             is APIResult.Success -> {
                 try {
                     // attempt parsing and set data as object
-                    System.out.println(result.data)
                     task.jsonAdapter.fromJson(result.data as String)?.let {
                         return APIResult.Success(it)
                     } ?: run {
